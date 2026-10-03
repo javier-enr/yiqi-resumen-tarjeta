@@ -44,7 +44,7 @@ jobs:
           persist-credentials: false
       - uses: trufflesecurity/trufflehog@4dd8831c5f12599465d4d45c3c447b4018a34c85 # v3.97.9
         with:
-          extra_args: --results=verified,unknown --fail
+          extra_args: --results=verified,unknown   # la acción ya agrega --fail
 
   dependency-review:
     name: Revisión de dependencias del PR
