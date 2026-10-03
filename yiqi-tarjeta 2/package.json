@@ -1,0 +1,21 @@
+{
+  "name": "yiqi-tarjeta",
+  "version": "1.11.0",
+  "private": true,
+  "description": "Resumen de tarjeta de crédito → detalle de factura de compra para YiQi. App 100% frontend estática; el PDF se procesa en el navegador. Sin backend.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "audit": "npm audit --omit=optional --audit-level=critical && node scripts/audit.mjs",
+    "verify": "npm run build && npm test && npm run audit"
+  },
+  "dependencies": {
+    "pdfjs-dist": "4.10.38",
+    "xlsx": "0.18.5"
+  }
+}

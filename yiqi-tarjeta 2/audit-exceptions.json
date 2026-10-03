@@ -1,0 +1,18 @@
+{
+  "excepciones": [
+    {
+      "control": "TEC-006 / SEC-060 / SEC-APP-020",
+      "paquete": "xlsx",
+      "version": "0.18.5",
+      "advisories": [
+        "npm 1108110 — Prototype Pollution in sheetJS",
+        "npm 1108111 — SheetJS Regular Expression Denial of Service (ReDoS)"
+      ],
+      "justificacion": "Las advisories afectan la LECTURA de planillas no confiables. La app sólo usa XLSX.write para generar un archivo con datos que el usuario ya tiene; nunca parsea un xlsx externo.",
+      "mitigacion": "No se invoca XLSX.read ni XLSX.readFile en el código. 0.18.5 es la última versión de SheetJS publicada en npm.",
+      "responsable": "Javier Perez (A&F)",
+      "vence": "2027-01-03",
+      "revision": "Migrar a SheetJS >= 0.20.2 (distribuido desde cdn.sheetjs.com) antes del vencimiento."
+    }
+  ]
+}

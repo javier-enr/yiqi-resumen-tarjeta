@@ -1,0 +1,55 @@
+{
+  "descripcion": "Excepciones formales de controles YiQi para yiqi-tarjeta (app 100% frontend estática, sin backend ni autenticación). Cada una con control, responsable, justificación, mitigación y vencimiento.",
+  "excepciones": [
+    {
+      "control": "SEC-051 / SEC-APP-001",
+      "titulo": "Pruebas negativas de autorización",
+      "estado": "no aplica",
+      "justificacion": "No existe servidor, API, usuarios, roles ni tenants. No hay recurso protegido que autorizar.",
+      "mitigacion": "La app no lee ni escribe datos de YiQi; procesa en el navegador un PDF que el usuario ya posee. El Excel se importa a mano con los permisos del usuario en YiQi, que aplica su propia autorización.",
+      "responsable": "Javier Perez (A&F)",
+      "vence": "2027-04-03",
+      "reevaluar_si": "Se agrega backend o integración directa con la API de YiQi."
+    },
+    {
+      "control": "SEC-014 / SEC-APP-001",
+      "titulo": "Autorización del lado servidor",
+      "estado": "no aplica",
+      "justificacion": "No hay servidor. La interfaz no protege datos ni operaciones sensibles: no accede a ningún sistema.",
+      "mitigacion": "Ídem SEC-051. La autorización de la importación la aplica YiQi.",
+      "responsable": "Javier Perez (A&F)",
+      "vence": "2027-04-03",
+      "reevaluar_si": "Se agrega backend o integración directa con la API de YiQi."
+    },
+    {
+      "control": "SEC-054 / SEC-APP-009",
+      "titulo": "MFA resistente a phishing",
+      "estado": "no aplica",
+      "justificacion": "La app no tiene cuentas, login ni operaciones privilegiadas.",
+      "mitigacion": "Sin credenciales ni sesiones en la app. El acceso a YiQi para importar mantiene el MFA de YiQi.",
+      "responsable": "Javier Perez (A&F)",
+      "vence": "2027-04-03",
+      "reevaluar_si": "Se agrega autenticación propia."
+    },
+    {
+      "control": "TEC-000",
+      "titulo": "Cobertura full-stack verificable",
+      "estado": "no aplica",
+      "justificacion": "Arquitectura estática por diseño: no hay capa servidor que analizar. El análisis incluye todo el repositorio (frontend, configuración de despliegue en netlify.toml y CI en .github/workflows).",
+      "mitigacion": "Frontend, despliegue y pipeline están en el mismo repositorio y se auditan juntos.",
+      "responsable": "Javier Perez (A&F)",
+      "vence": "2027-04-03",
+      "reevaluar_si": "Se agrega backend."
+    },
+    {
+      "control": "SEC-061 / SEC-APP-020 (pentest)",
+      "titulo": "Pentest",
+      "estado": "no aplicabilidad formal; DAST automatizado vigente",
+      "justificacion": "Sin backend, sin datos persistidos ni credenciales: la superficie es el parseo de un PDF en el navegador del propio usuario. Un pentest manual no es proporcional al riesgo.",
+      "mitigacion": "DAST OWASP ZAP baseline semanal en CI (job dast); pdf.js 4.10.38 con isEvalSupported:false (CVE-2024-4367); sin innerHTML; CSP restrictiva con frame-ancestors 'none'; SRI en scripts.",
+      "responsable": "Javier Perez (A&F)",
+      "vence": "2027-04-03",
+      "reevaluar_si": "Cambia la arquitectura o el DAST reporta hallazgos high."
+    }
+  ]
+}

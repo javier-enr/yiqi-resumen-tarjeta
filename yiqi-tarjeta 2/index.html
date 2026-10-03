@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html data-theme="system" lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resumen de tarjeta → YiQi</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://diguardia.github.io/yiqi-imagen/styles.css">
+
+<style>
+  .tx-page   { max-width: 1100px; margin: 0 auto; width: 100%; min-width: 0; }
+  .topbar-l  { display: flex; align-items: center; gap: 14px; }
+  .tx-brand  {
+    display: grid; place-items: center; width: 46px; height: 46px; flex: none;
+    color: var(--cyan); background: var(--cyan-soft); border-radius: var(--radius-md);
+  }
+  .tx-brand svg { width: 30px; height: 30px; }
+  .tx-logo { height: 34px; width: auto; flex: none; display: block; }
+  .tx-sep  { width: 1px; height: 32px; background: var(--line-strong); flex: none; }
+  .tx-fields { display: grid; grid-template-columns: minmax(0, 240px) minmax(0, 240px); gap: 16px; }
+  .tx-guia { padding: 0; overflow: hidden; }
+  .tx-guia > summary {
+    list-style: none; cursor: pointer; padding: 16px 20px;
+    display: flex; align-items: center; gap: 10px;
+    font: 600 var(--fs-body) var(--sans); color: var(--text);
+  }
+  .tx-guia > summary::-webkit-details-marker { display: none; }
+  .tx-guia > summary .tx-chev { margin-left: auto; transition: transform var(--tr); color: var(--muted-2); }
+  .tx-guia[open] > summary .tx-chev { transform: rotate(180deg); }
+  .tx-guia > summary:hover { color: var(--cyan); }
+  .tx-guia-body { padding: 0 20px 20px; display: grid; gap: 18px; }
+  .tx-guia-body h3 {
+    margin: 0 0 8px; font: 600 var(--fs-body) var(--sans); color: var(--text);
+  }
+  .tx-guia-body ol, .tx-guia-body ul { margin: 0; padding-left: 20px; color: var(--muted); line-height: 1.6; font-size: var(--fs-body); }
+  .tx-guia-body li { margin-bottom: 5px; }
+  .tx-guia-body li strong { color: var(--text); font-weight: 600; }
+  .tx-guia-step { display: grid; gap: 3px; }
+  .tx-drop {
+    display: grid; place-items: center; gap: 14px; padding: 34px 20px;
+    border-radius: var(--radius-lg); border: 1.5px dashed var(--line-strong);
+    background: var(--bg-elev); transition: border-color var(--tr), background var(--tr);
+  }
+  .tx-drop.is-over { border-color: var(--cyan); background: var(--cyan-soft); }
+  .tx-drop-ic {
+    display: grid; place-items: center; width: 56px; height: 56px;
+    color: var(--cyan); background: var(--cyan-soft); border-radius: 50%;
+  }
+  .tx-drop-ic svg { width: 28px; height: 28px; }
+  .tx-drop-txt { text-align: center; display: grid; gap: 3px; }
+  .tx-drop-title { color: var(--text); font: 600 var(--fs-body) var(--sans); margin: 0; }
+  .tx-drop-sub { color: var(--muted-2); font-size: var(--fs-meta); margin: 0; max-width: 44ch; }
+
+  /* ── Estado compacto: una vez leído el resumen, el encabezado se achica
+       para que los datos queden arriba y a la vista ───────────────────── */
+  .tx-loaded #intro-legend,
+  .tx-loaded .tx-guia { display: none; }
+  .tx-drop.is-done {
+    display: flex; flex-flow: row wrap; align-items: center;
+    justify-content: flex-start; gap: 14px; padding: 12px 16px;
+    text-align: left; border-style: solid; border-color: var(--line-strong);
+    background: var(--bg);
+  }
+  .tx-drop.is-done .tx-drop-ic { width: 38px; height: 38px; }
+  .tx-drop.is-done .tx-drop-ic svg { width: 20px; height: 20px; }
+  .tx-drop.is-done .tx-drop-txt { text-align: left; }
+  .tx-drop.is-done .tx-drop-sub { display: none; }
+  .tx-drop.is-done #elegir { margin-left: auto; }
+  /* Carga bloqueada hasta elegir la moneda */
+  .tx-drop.tx-gate { opacity: .55; }
+  #elegir:disabled { opacity: .5; pointer-events: none; }
+
+  .tx-kpis    { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
+  .tx-bars    { display: grid; gap: 9px; }
+  .tx-bar-row { display: grid; grid-template-columns: minmax(0,1fr); gap: 3px; }
+  .tx-bar-top { display: flex; justify-content: space-between; gap: 12px; font-size: var(--fs-meta); }
+  .tx-bar-top .tx-bar-desc { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tx-bar-top .tx-bar-amt  { color: var(--muted); font: 500 var(--fs-meta) var(--mono); flex: none; }
+  .tx-bar-track { height: 7px; border-radius: 99px; background: var(--bg-elev); overflow: hidden; }
+  .tx-bar-fill  { height: 100%; border-radius: 99px; background: var(--cyan); }
+  .tx-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .tx-legend  { max-width: 66ch; color: var(--muted-2); font-size: var(--fs-meta); }
+  .tx-alerts  { display: grid; gap: 8px; }
+  .tx-src     { margin-top: 2px; color: var(--muted-2); font: 500 11px var(--mono); overflow-wrap: anywhere; }
+  .tx-foot    { color: var(--muted-2); font: 500 10px/1.45 var(--mono); text-align: center; }
+  .tx-chk     { display: grid; place-items: center; }
+  .tx-usd     { color: var(--muted-2); font: 500 11px var(--mono); }
+  .tx-bar     { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+                justify-content: space-between; }
+  [hidden] { display: none !important; }
+  /* Foco visible accesible (UX) */
+  a:focus-visible, button:focus-visible, input:focus-visible,
+  select:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: var(--radius-sm);
+  }
+
+  @media (max-width: 980px) { .tx-kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  @media (max-width: 640px) { .tx-fields, .tx-kpis { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main class="content tx-page">
+
+  <header class="topbar">
+    <div class="topbar-l">
+      <!-- Logo YiQi canónico, inline, adaptado al tema (YIQ-003) -->
+      <svg class="tx-logo" viewBox="14 14 72 37" role="img" aria-label="YiQi">
+        <path fill="var(--text)" d="M20.44,48.34l2.57-6.15-6.79-16.91c-.14-.39.07-.61.46-.61h4.97c.29,0,.57.14.68.43l3.58,10.08,3.61-10.08c.11-.29.39-.43.68-.43h4.97c.39,0,.57.21.43.61l-9.26,23.27c-.11.29-.39.43-.68.43h-4.75c-.43,0-.68-.21-.47-.64Z"/>
+        <path fill="var(--text)" d="M38.5,18.99c0-1.77,1.35-3.19,3.23-3.19s3.23,1.42,3.23,3.19-1.38,3.23-3.23,3.23-3.23-1.42-3.23-3.23ZM38.72,25.24c0-.32.25-.57.57-.57h4.89c.32,0,.57.25.57.57v16.24c0,.32-.25.57-.57.57h-4.89c-.32,0-.57-.25-.57-.57v-16.24Z"/>
+        <path fill="var(--cyan)" d="M57.91,44.78v-2.66c-2.18-.53-4.21-1.66-5.92-3.36-4.97-4.97-5.09-13.02-.03-18.08,5.09-5.09,13.14-4.97,18.11,0s5.09,13.02,0,18.11c-1.78,1.78-3.94,2.93-6.22,3.46v2.51c0,.35-.18.53-.58.53h-4.82c-.3,0-.55-.2-.55-.5ZM56.28,34.47c.5.5,1.05.9,1.65,1.2v-3.36c0-.35.18-.53.53-.53h4.87c.25,0,.53.18.53.53v3.36c.63-.33,1.23-.78,1.78-1.33,2.73-2.73,2.78-6.75.15-9.38s-6.67-2.61-9.41.13c-2.71,2.71-2.73,6.75-.1,9.38Z"/>
+        <path fill="var(--text)" d="M77.22,18.99c0-1.77,1.35-3.19,3.23-3.19s3.23,1.42,3.23,3.19-1.38,3.23-3.23,3.23-3.23-1.42-3.23-3.23ZM77.44,25.24c0-.32.25-.57.57-.57h4.89c.32,0,.57.25.57.57v16.24c0,.32-.25.57-.57.57h-4.89c-.32,0-.57-.25-.57-.57v-16.24Z"/>
+      </svg>
+      <span class="tx-sep" aria-hidden="true"></span>
+      <span class="tx-brand" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none">
+          <rect x="5" y="12" width="26" height="18" rx="3" fill="currentColor" opacity="0.12"/>
+          <rect x="5" y="12" width="26" height="18" rx="3" stroke="currentColor" stroke-width="2"/>
+          <path d="M5 18h26" stroke="currentColor" stroke-width="2"/>
+          <rect x="9" y="24" width="7" height="2.5" rx="1.25" fill="currentColor"/>
+          <path d="M33 30l6 6m0 0v-4.5m0 4.5h-4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="28" y="30" width="15" height="13" rx="2.5" fill="currentColor" opacity="0.12"/>
+          <rect x="28" y="30" width="15" height="13" rx="2.5" stroke="currentColor" stroke-width="2"/>
+          <path d="M31 35h9M31 38.5h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <div>
+        <p class="page-kicker">Administración y finanzas</p>
+        <h3>Resumen de tarjeta de crédito</h3>
+      </div>
+    </div>
+    <div class="topbar-r">
+      <span class="badge badge-cyan">No escribe en YiQi</span>
+      <div class="theme-toggle" role="group" aria-label="Tema">
+        <button class="theme-opt" type="button" onclick="setTheme('dark')" aria-label="Oscuro" title="Oscuro">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+        <button class="theme-opt" type="button" onclick="setTheme('system')" aria-label="Sistema" title="Sistema">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </button>
+        <button class="theme-opt" type="button" onclick="setTheme('light')" aria-label="Claro" title="Claro">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-header"><span class="panel-kicker">Factura de tipo RESUMEN</span></div>
+    <p class="tx-legend" id="intro-legend">
+      Subí el PDF del resumen de la tarjeta y la herramienta arma el detalle para importar
+      en YiQi. Primero creá a mano la factura RESUMEN (con el banco emisor como proveedor) y
+      cargá acá su número. El PDF se procesa en tu computadora; no se sube a ningún servidor.
+    </p>
+
+    <div class="tx-fields">
+      <div>
+        <label class="ds-label" for="factura">Factura (Nro completo) <span class="req">*</span></label>
+        <input class="ds-input" type="text" id="factura" placeholder="999-12345678" required>
+      </div>
+      <div>
+        <label class="ds-label" for="moneda">Moneda de la factura <span class="req">*</span></label>
+        <select class="ds-input" id="moneda" required>
+          <option value="" disabled selected>Elegí la moneda…</option>
+          <option value="ARS">Pesos (ARS)</option>
+          <option value="USD">Dólares (USD)</option>
+        </select>
+      </div>
+    </div>
+    <p class="tx-legend" id="moneda-hint" style="margin-top:10px">
+      YiQi registra cada factura RESUMEN en una sola moneda. La moneda se <strong>fija al subir el
+      PDF</strong>; para la otra moneda (si el resumen tiene consumos en pesos y en dólares) usá
+      «Resetear todo» y volvé a subirlo: son dos facturas, una por moneda.
+    </p>
+
+    <div id="aviso_otro" class="ds-note ds-note--warn" style="margin-top:14px" hidden>
+      <strong>No se pudo leer el resumen adjunto.</strong>
+    </div>
+  </section>
+
+  <details class="panel tx-guia">
+    <summary>
+      Cómo se usa esta herramienta
+      <svg class="tx-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </summary>
+    <div class="tx-guia-body">
+      <div class="tx-guia-step">
+        <h3>Para qué sirve</h3>
+        <p style="margin:0; color:var(--muted); line-height:1.6; font-size:var(--fs-body)">
+          Convierte el PDF del resumen de una tarjeta de crédito en el Excel de detalle
+          que se importa en la factura RESUMEN de YiQi. Lee cada consumo, verifica que las
+          cuentas del resumen cierren, y arma el archivo. El PDF nunca sale de tu computadora.
+        </p>
+      </div>
+
+      <div class="tx-guia-step">
+        <h3>Paso a paso</h3>
+        <ol>
+          <li>En YiQi, creá a mano la <strong>factura de compra tipo RESUMEN</strong>, con el banco emisor como proveedor.</li>
+          <li>Escribí el <strong>número de esa factura</strong> (formato 999-12345678).</li>
+          <li>Arrastrá o elegí el <strong>PDF del resumen</strong>.</li>
+          <li>Revisá los consumos. Los que <strong>ya tienen factura de compra</strong> en YiQi vienen tildados: quedan como «Excluir movimiento» para no contar dos veces. Destildá los que no la tengan.</li>
+          <li>Generá el Excel e importalo en el detalle de la factura RESUMEN.</li>
+        </ol>
+      </div>
+
+      <div class="tx-guia-step">
+        <h3>Cómo leer los tildes</h3>
+        <ul>
+          <li><strong>Tildado</strong> = ese gasto ya se registró por su propia factura de compra. Se excluye para no duplicarlo.</li>
+          <li><strong>Sin tildar</strong> = genera asiento. Es un gasto que entra sin comprobante de proveedor.</li>
+          <li>Los <strong>cargos del emisor</strong> (IVA, sellos, percepciones) siempre se registran.</li>
+        </ul>
+      </div>
+
+      <div class="tx-guia-step">
+        <h3>Si algo no cierra</h3>
+        <p style="margin:0; color:var(--muted); line-height:1.6; font-size:var(--fs-body)">
+          La herramienta verifica que <strong>saldo anterior + pagos + consumos + cargos = total</strong>.
+          Si esa cuenta no da, avisa y no genera el Excel: casi siempre es que el resumen
+          tiene un formato que la herramienta no reconoce.
+        </p>
+      </div>
+
+      <div class="ds-note">
+        <strong>Qué resúmenes lee:</strong> resúmenes de tarjeta VISA y Cabal (de cualquier banco).
+        Verifica que las cuentas cierren; si no cierra, no genera el Excel.
+        Todo el procesamiento ocurre en tu equipo; el PDF no se sube a ningún servidor.
+      </div>
+    </div>
+  </details>
+
+  <section class="tx-drop" id="zona">
+    <span class="tx-drop-ic" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><path d="M12 3v13"/></svg>
+    </span>
+    <div class="tx-drop-txt">
+      <p id="zona_txt" class="tx-drop-title">Arrastrá el PDF del resumen acá</p>
+      <p class="tx-drop-sub">o elegilo desde tu computadora. Se procesa en tu equipo; no se sube a ningún servidor.</p>
+    </div>
+    <input type="file" id="archivo" accept="application/pdf" hidden>
+    <button class="btn btn-primary" type="button" id="elegir" aria-label="Elegir el PDF del resumen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><path d="M12 3v13"/></svg>
+      <span id="elegir_txt">Elegir resumen</span>
+    </button>
+    <button class="btn btn-ghost btn-sm" type="button" id="resetear" aria-label="Resetear todo y empezar de nuevo" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      Resetear todo
+    </button>
+  </section>
+
+  <div id="resultado" hidden>
+
+    <div class="ds-note" id="tx-cabecera" style="margin-bottom:16px" hidden></div>
+
+    <section class="tx-kpis">
+      <div class="kpi-card">
+        <div class="kpi-label">
+          Consumos ya facturados
+          <button class="kpi-help" type="button" onclick="this.classList.toggle('is-open')" aria-label="Origen">?
+            <span class="kpi-help-pop">Consumos tildados. Cada uno va como línea propia con
+              «Excluir movimiento» en TRUE, porque ya tienen asiento por su factura de compra.</span>
+          </button>
+        </div>
+        <div class="kpi-value" id="kpi_excl">—</div>
+        <p class="kpi-note" id="kpi_excl_n" style="text-align:center"></p>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">
+          Consumos sin factura
+          <button class="kpi-help" type="button" onclick="this.classList.toggle('is-open')" aria-label="Origen">?
+            <span class="kpi-help-pop">Consumos no tildados. Sus líneas van con «Excluir movimiento»
+              en FALSE, así que generan asiento. Es el gasto que entra sin comprobante de proveedor.</span>
+          </button>
+        </div>
+        <div class="kpi-value" id="kpi_sin">—</div>
+        <p class="kpi-note" id="kpi_sin_n" style="text-align:center"></p>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">
+          Cargos del emisor
+          <button class="kpi-help" type="button" onclick="this.classList.toggle('is-open')" aria-label="Origen">?
+            <span class="kpi-help-pop">Intereses, sellos, IVA, percepciones. El resumen es el
+              comprobante, así que siempre se registran.</span>
+          </button>
+        </div>
+        <div class="kpi-value" id="kpi_cargos">—</div>
+        <p class="kpi-note" id="kpi_cargos_n" style="text-align:center"></p>
+      </div>
+    </section>
+
+    <section class="panel" id="tx-analisis" hidden>
+      <div class="panel-header"><span class="panel-kicker">Gastos más grandes del resumen</span></div>
+      <div class="tx-bars" id="tx_bars"></div>
+    </section>
+
+    <div class="tx-alerts" id="alertas" hidden></div>
+
+    <section class="panel">
+      <div class="panel-header tx-bar">
+        <span class="panel-kicker">Consumos</span>
+        <span class="tx-actions">
+          <button class="btn btn-sm" type="button" id="todos">Tildar todos</button>
+          <button class="btn btn-sm" type="button" id="ninguno">Destildar todos</button>
+        </span>
+      </div>
+      <p class="tx-legend">Arrancan tildados: se asume que el consumo ya tiene su factura de compra en
+        YiQi. <strong>Destildá los que no la tengan</strong> — esos se cargan como líneas propias, con
+        asiento. Los consumos en dólares vienen sin tildar.</p>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr>
+            <th style="width:120px">¿Ya facturado?</th>
+            <th style="width:90px">Fecha</th>
+            <th>Detalle</th>
+            <th class="num" id="th_imp_c">Importe</th>
+          </tr></thead>
+          <tbody id="filas_c"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header"><span class="panel-kicker">Cargos del emisor · siempre se registran</span></div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th style="width:90px">Fecha</th><th>Detalle</th>
+            <th class="num" id="th_imp_g">Importe</th></tr></thead>
+          <tbody id="filas_g"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="tx-actions">
+        <button class="btn btn-primary" type="button" id="excel" aria-label="Generar el Excel del detalle">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><path d="M12 15V3"/></svg>
+          Generar Excel del detalle
+        </button>
+      </div>
+      <p class="tx-legend" id="leyenda">
+        El Excel se importa a mano en el detalle de la factura RESUMEN.
+      </p>
+    </section>
+  </div>
+
+  <p class="tx-foot">© 2026 YiQi S.A. · DS v1.2.7</p>
+</main>
+
+<!-- Librerías alojadas localmente (bundling propio) + SRI. No se cargan desde un CDN externo. -->
+<script src="vendor/pdf.min.js" integrity="sha384-WHngF7yfs+Op1uvjOxibc8wjsFBRDZDcgZUSw0lfr07vr4OeBxeJzfQNFkU+fGqX"></script>
+<script src="vendor/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw"></script>
+<script>
+/* ── Tema (DS §11) ───────────────────────────────────────────── */
+function almacen(){ try { return window.localStorage; } catch { return null; } }
+function guardado(){ return almacen()?.getItem('yiqi-theme') || 'system'; }
+function resolveTheme(){
+  const s = guardado();
+  return s === 'system'
+    ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : s;
+}
+function marcarActivo(v){
+  document.querySelectorAll('.theme-opt').forEach((b,i) =>
+    b.classList.toggle('active', ['dark','system','light'][i] === v));
+}
+function applyTheme(t){ document.documentElement.dataset.theme = t; marcarActivo(guardado()); }
+function setTheme(v){
+  almacen()?.setItem('yiqi-theme', v);
+  applyTheme(v === 'system' ? resolveTheme() : v);
+  marcarActivo(v);
+}
+matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+  if (guardado() === 'system') applyTheme(resolveTheme());
+});
+applyTheme(resolveTheme());
+
+/* ── Motor de parseo + perfiles por banco ─────────────────────
+   El motor no sabe de bancos: recibe un PERFIL que describe sólo
+   lo que cambia (columnas, separador, formato de fecha, signo).
+   La identidad contable saldo+pagos+consumos+cargos = total es el
+   juez: si no cierra, algo se leyó mal y la app avisa.           */
+// Si el CDN de pdf.js no cargó, no dejamos que tumbe el resto de la interfaz:
+// el error se muestra recién al intentar leer un PDF.
+if(typeof pdfjsLib !== 'undefined')
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.mjs';
+
+const MONEY = /^[−-]?\d{1,3}(?:\.\d{3})*,\d{2}[−-]?$/;
+
+// Fijos, no los elige el usuario.
+//  - Alícuota "No gravado": el IVA del resumen no es crédito fiscal, pero el
+//    import de YiQi exige el campo completo (no acepta vacío).
+//  - Concepto (CODC_ID_CODC) vacío: cada línea es un concepto distinto.
+const ALICUOTA = 'No gravado';
+const SI = 'TRUE', NO = 'FALSE';       // valores lógicos que espera la importación
+
+const num = t => {
+  const neg = /^[−-]/.test(t) || /[−-]$/.test(t);
+  const v = parseFloat(t.replace(/[−-]/g,'').replace(/\./g,'').replace(',','.'));
+  return neg ? -Math.abs(v) : v;
+};
+const pesos = n => n.toLocaleString('es-AR',{minimumFractionDigits:2, maximumFractionDigits:2});
+// Render por DOM con textContent: nunca se inserta HTML a partir de datos del PDF (evita XSS).
+const mkEl = (tag, cls, txt) => {
+  const n = document.createElement(tag);
+  if(cls) n.className = cls;
+  if(txt != null) n.textContent = txt;
+  return n;
+};
+const vaciar = n => { while(n.firstChild) n.removeChild(n.firstChild); };
+
+const FECHA = /^\d{2}[−/-]\d{2}[−/-]\d{2}$/;   // tolera guión normal, − especial y barra (Cabal)
+const colapsar = s => s.replace(/\s+/g, ' ').trim();
+
+// Agrupa las palabras del PDF en filas por coordenada vertical.
+function agruparFilas(items){
+  const f = {};
+  items.forEach(i => { const k = Math.round(i.y/2); (f[k] ||= []).push(i); });
+  return Object.keys(f).map(Number).sort((a,b)=>a-b)
+    .map(k => f[k].sort((a,b)=>a.x0-b.x0));
+}
+
+/* ── Motor genérico de resúmenes VISA ─────────────────────────
+   No tiene perfiles por banco: deduce todo del propio PDF.
+   - columnas ancladas a los rótulos FECHA / PESOS / DÓLARES
+   - fecha en un token (Galicia) o fragmentada (Credicoop)
+   - signo pegado al número o como token aparte
+   - separador = última "Total Consumos" (single y multi-tarjeta)
+   - total leído por rótulo (SALDO ACTUAL $ / TOTAL A PAGAR)
+   La aritmética (saldo + pagos + consumos + cargos = total) es el juez. */
+function interpretar(rows){
+  const texto = r => colapsar(r.map(t=>t.s).join(' '));
+  // plano: sin espacios y en mayúsculas, para rótulos que vienen espaciados letra a letra
+  const plano = r => r.map(t=>t.s).join('').replace(/\s+/g,'').toUpperCase();
+
+  // 1) Columnas ancladas a los rótulos del encabezado
+  let pesoHdr=null, usdHdr=null, fechaHdr=null;
+  for(const r of rows){
+    const up = texto(r).toUpperCase();
+    if(/\bPESOS\b/.test(up) && /\bD[ÓO]LARES\b/.test(up) && /\bFECHA\b/.test(up)){
+      for(const w of r){
+        const s=w.s.toUpperCase();
+        if(s==='PESOS') pesoHdr=w.x1;
+        if(s==='DÓLARES'||s==='DOLARES') usdHdr=w.x1;
+        if(s==='FECHA') fechaHdr=w.x1;
+      }
+      if(pesoHdr && usdHdr) break;
+    }
+  }
+  if(!pesoHdr) throw new Error('No reconozco el formato de este resumen (no encontré las columnas PESOS / DÓLARES). ¿Es un resumen VISA o Cabal?');
+  const winP = [pesoHdr - 45, pesoHdr + 18];
+  const winU = usdHdr ? [usdHdr - 45, usdHdr + 12] : null;
+
+  const fechaCol = (fechaHdr || 52) + 18;
+  const fechaDe = r => {
+    const frag = r.filter(t => t.x1 < fechaCol).map(t=>t.s).join('');
+    return FECHA.test(frag) ? frag : null;
+  };
+  // descripción: tokens entre la columna fecha y la de pesos, sin importes ni signos
+  const descDe = r => r.filter(t => t.x1 >= fechaCol && t.x1 < winP[0]
+                     && !MONEY.test(t.s) && !/^[−-]$/.test(t.s)).map(t=>t.s).join(' ').trim();
+
+  const enVentana = (r, win) => {
+    if(!win) return null;
+    const w = r.find(t => MONEY.test(t.s) && t.x1 > win[0] && t.x1 < win[1]);
+    if(!w) return null;
+    let v = num(w.s);
+    if(v > 0){ const neg = r.some(t => /^[−-]$/.test(t.s) && Math.abs(t.x0 - w.x1) < 2); if(neg) v = -v; }
+    return v;
+  };
+  const enPesos = r => enVentana(r, winP);
+  const enUsd   = r => enVentana(r, winU);
+
+  // 2) Separador consumos|cargos: última "Total Consumos"
+  const esSep = r => plano(r).includes('TOTALCONSUMOS');
+  const idxSep = rows.map((r,i)=> esSep(r)?i:-1).filter(i=>i>=0).pop();
+  if(idxSep == null) throw new Error('No reconozco el formato de este resumen (no encontré "Total Consumos").');
+
+  // 3) Total a pagar: por rótulo, no por columna
+  function totalPagar(){
+    for(let i=0;i<rows.length;i++){
+      if(!/SALDOACTUAL\$|TOTALAPAGAR/.test(plano(rows[i]))) continue;
+      const pesosRow = rows[i].filter(w=>MONEY.test(w.s) && (!usdHdr || w.x1 < usdHdr-10));
+      if(pesosRow.length) return pesosRow.map(w=>num(w.s)).sort((a,b)=>Math.abs(b)-Math.abs(a))[0];
+      if(i>0){
+        const prev = rows[i-1].filter(w=>MONEY.test(w.s) && (!usdHdr || w.x1 < usdHdr-10));
+        if(prev.length) return prev.map(w=>num(w.s)).sort((a,b)=>Math.abs(b)-Math.abs(a))[0];
+      }
+    }
+    return null;
+  }
+
+  // 4) Saldo anterior: hay bancos (Cabal) con dos filas "SALDO ANTERIOR" —una de
+  //    resumen y la real de la tabla. Tomamos la última con valor en la columna.
+  let saldoAntP=null;
+  for(const r of rows){ if(plano(r).includes('SALDOANTERIOR')){ const v=enPesos(r); if(v!=null) saldoAntP=v; } }
+
+  // 5) Clasificación
+  const pagos=[], consumos=[], cargos=[], subtot=[];
+  rows.forEach((r,i)=>{
+    if(esSep(r)){ const p=enPesos(r); if(p!=null) subtot.push(p); return; }
+    const f = fechaDe(r);
+    if(!f) return;
+    const p = enPesos(r), u = enUsd(r);
+    if(p===null && u===null) return;
+    const it = { fecha:f, desc:descDe(r), pesos:p, usd:u, ok: p!==null };
+    if((p||0)<0 || (u||0)<0) pagos.push(it);
+    else if(i < idxSep) consumos.push(it);
+    else cargos.push(it);
+  });
+
+  // 6) Banco emisor, red y tarjeta (informativo, para la cabecera)
+  const textoTodo = rows.map(r=>plano(r)).join(' ');
+  const BANCOS = ['CREDICOOP','GALICIA','SANTANDER','MACRO','NACION','BBVA','PROVINCIA',
+    'COMAFI','SUPERVIELLE','ICBC','HSBC','PATAGONIA','HIPOTECARIO','CIUDAD','ITAU',
+    'BRUBANK','COLUMBIA','CREDITODELSUR','BIND'];
+  const bkey = BANCOS.find(b => textoTodo.includes(b)) || '';
+  const bancoEmisor = bkey ? bkey.charAt(0) + bkey.slice(1).toLowerCase() : '';
+  const red = /\bCABAL\b/.test(textoTodo) ? 'Cabal' : (/\bVISA\b/.test(textoTodo) ? 'VISA' : '');
+  // tarjetas: de las filas "TARJETA XXXX … Total Consumos"
+  const tarjetas = [...new Set(rows.filter(esSep)
+    .map(r => (plano(r).match(/TARJETA\(?(\d{3,4})\)?/) || [])[1]).filter(Boolean))];
+
+  return {
+    pagos, consumos, cargos, banco: red || 'VISA',
+    bancoEmisor, red, tarjetas,
+    totalConsumosP: subtot.reduce((a,b)=>a+(b||0),0),  // suma subtotales por tarjeta (doble verificación)
+    totalConsumosU: null,
+    saldoAntP,
+    saldoActP: totalPagar(),
+  };
+}
+
+async function parseResumen(file){
+  if(typeof pdfjsLib === 'undefined')
+    throw new Error('No se pudo cargar el lector de PDF. Revisá tu conexión y recargá la página.');
+  const doc = await pdfjsLib.getDocument({data: await file.arrayBuffer(), isEvalSupported: false}).promise;
+  let items = [];
+  for(let p = 1; p <= doc.numPages; p++){
+    const c = await (await doc.getPage(p)).getTextContent();
+    c.items.filter(i => i.str.trim()).forEach(i => {
+      items.push({ s:i.str.trim(), x0:i.transform[4], x1:i.transform[4]+i.width, y: p*100000 - i.transform[5] });
+    });
+  }
+  return interpretar(agruparFilas(items));
+}
+
+/* ── Controles ───────────────────────────────────────────────── */
+const suma  = (a,k) => a.reduce((x,i) => x + (i[k] || 0), 0);
+
+function revisar(d){
+  const al = [];
+  const err = (t) => al.push({nivel:'error', texto:t});
+  const avi = (t) => al.push({nivel:'aviso', texto:t});
+
+  // Guarda: si no se leyó ningún movimiento, el perfil no matcheó el PDF.
+  if(!d.consumos.length && !d.cargos.length && !d.pagos.length){
+    // Resumen sin movimientos (ej. sólo saldo a favor): saldo anterior = saldo actual.
+    if(d.saldoAntP != null && d.saldoActP != null && Math.abs(d.saldoAntP - d.saldoActP) < 0.01)
+      err(`Este resumen no tiene consumos, cargos ni pagos en el período (saldo sin cambios:
+           ${pesos(d.saldoActP)}). No hay detalle para importar.`);
+    else
+      err(`No se pudo leer el resumen adjunto.`);
+    return al;
+  }
+  // Guarda: sin saldo o total no se puede verificar que el resumen cierre.
+  if(d.saldoAntP == null || d.saldoActP == null)
+    err(`No se pudo leer ${d.saldoAntP == null ? 'el saldo anterior' : 'el total a pagar'}
+         del resumen. Sin ese dato no puedo verificar que las cuentas cierren.`);
+
+  const sc = suma(d.consumos,'pesos'), scu = suma(d.consumos,'usd');
+  if(d.totalConsumosP != null && Math.abs(sc - d.totalConsumosP) > 0.01)
+    err(`La suma de los consumos (${pesos(sc)}) no coincide con el «Total Consumos» que imprime el
+         resumen (${pesos(d.totalConsumosP)}). Se leyó mal alguna línea.`);
+  if(d.totalConsumosU != null && Math.abs(scu - d.totalConsumosU) > 0.01)
+    err(`La suma de consumos en dólares (${pesos(scu)}) no coincide con el total del resumen
+         (${pesos(d.totalConsumosU)}).`);
+
+  if(d.saldoAntP != null && d.saldoActP != null){
+    const calc = d.saldoAntP + suma(d.pagos,'pesos') + sc + suma(d.cargos,'pesos');
+    if(Math.abs(calc - d.saldoActP) > 0.01)
+      err(`No cierra el resumen: saldo anterior + pagos + consumos + cargos = ${pesos(calc)},
+           pero el saldo actual dice ${pesos(d.saldoActP)}.`);
+  }
+
+  // Consumos en la OTRA moneda: no entran en esta factura. Se cargan reseteando y eligiéndola.
+  const campo = campoSel();
+  const otra = campo === 'pesos' ? 'usd' : 'pesos';
+  const otraLbl = campo === 'pesos' ? 'dólares' : 'pesos';
+  const nOtra = d.consumos.filter(c => c[campo] == null && c[otra] != null).length;
+  if(nOtra) avi(`Hay ${nOtra} consumo(s) en ${otraLbl} que no entran en esta factura. Para cargarlos
+    como su propia factura RESUMEN, usá «Resetear todo» y elegí ${otraLbl}.`);
+
+  const cuotas = d.consumos.filter(c => /C\.\d{2}\/\d{2}/.test(c.desc));
+  if(cuotas.length) avi(`Hay ${cuotas.length} consumo(s) en cuotas. YiQi no sigue el saldo de
+    cuotas: el pasivo futuro no queda registrado.`);
+
+  return al;
+}
+
+/* ── Excel · template DET_FACT_COMPRA ────────────────────────── */
+const ETIQUETAS = ['Factura (Nro Completo)','Concepto (Descripción)','Texto adicional','Cantidad',
+  'Tipo de unidad (Descripción)','Precio Unitario','% Bonificación','Alícuota (Nombre)',
+  'Honorario (Código)','Cuota relacionada (Descripción)','Cuenta de gastos (Nombre)',
+  'Remito de Compras (Nro Remito)','Excluir Movimiento','# dañados','Orden de compra (Nro OC)'];
+const CAMPOS = ['FACO_ID_FACO','CODC_ID_CODC','DEFC_CONCEPTO','DEFC_CANTIDAD','TIUN_ID_TIUN',
+  'DEFC_PRECIO_UNITARIO','DEFC_PORC_BONIFICACION','ALIV_ID_ALIV','HOSO_ID_HOSO','CUOT_ID_CUOT',
+  'CUCO_ID_CUCO','REMI_ID_REMI','DEFC_EXCLUIR_MOVIMIENTO','DEFC_CANTIDAD_DAADOS','ORDC_ID_ORDC'];
+
+function fila(factura, texto, importe, excluir){
+  return [factura, null, texto, 1, null, importe, null, ALICUOTA,
+          null, null, null, null, excluir ? SI : NO, null, null];
+}
+
+function construirExcel(d, factura, campo){
+  const filas = [ETIQUETAS, CAMPOS];
+  // Una línea por consumo, con su fecha y su descripción. No se agrupan:
+  // el detalle tiene que decir qué se pagó con la tarjeta.
+  // `campo` es 'pesos' o 'usd' según la moneda elegida (YiQi es monomoneda por factura).
+  d.consumos.filter(c => c[campo])
+    .forEach(c => filas.push(fila(factura, `${c.fecha} ${c.desc}`, c[campo], c.ok)));
+  d.cargos.filter(c => c[campo])
+    .forEach(c => filas.push(fila(factura, `${c.fecha} ${c.desc}`, c[campo], false)));
+
+  const ws = XLSX.utils.aoa_to_sheet(filas);
+  ws['!cols'] = [22,24,46,10,24,16,14,18,18,26,24,26,20,12,22].map(w => ({wch:w}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Hoja1');
+  return wb;
+}
+
+/* ── Interfaz ────────────────────────────────────────────────── */
+const $ = s => document.querySelector(s);
+let datos = null;
+
+// Moneda elegida → clave de importe. Se congela al subir el comprobante.
+const campoSel = () => $('#moneda').value === 'USD' ? 'usd' : 'pesos';
+
+// La carga se habilita sólo con la moneda elegida (así queda fija al subir).
+function gateCarga(){
+  const listo  = !!$('#moneda').value;
+  const loaded = document.querySelector('main').classList.contains('tx-loaded');
+  $('#elegir').disabled = !listo;
+  $('#zona').classList.toggle('tx-gate', !listo && !loaded);
+  if(!loaded) $('#zona_txt').textContent = listo
+    ? 'Arrastrá el PDF del resumen acá'
+    : 'Elegí la moneda para habilitar la carga';
+}
+
+// Vuelve todo al estado inicial: factura, moneda, archivo y resultados.
+function resetear(){
+  datos = null;
+  $('#factura').value = '';
+  const m = $('#moneda'); m.value = ''; m.disabled = false;
+  $('#archivo').value = '';
+  document.querySelector('main').classList.remove('tx-loaded');
+  $('#zona').classList.remove('is-done');
+  $('#elegir_txt').textContent = 'Elegir resumen';
+  $('#resultado').hidden = true;
+  $('#aviso_otro').hidden = true;
+  $('#resetear').hidden = true;
+  $('#leyenda').textContent = 'El Excel se importa a mano en el detalle de la factura RESUMEN.';
+  gateCarga();
+  revisarExport();
+}
+
+$('#elegir').onclick = () => $('#archivo').click();
+$('#archivo').onchange = e => procesar(e.target.files[0]);
+$('#resetear').onclick = resetear;
+
+const zona = $('#zona');
+['dragenter','dragover'].forEach(e => zona.addEventListener(e, ev => {
+  ev.preventDefault(); if(!$('#elegir').disabled) zona.classList.add('is-over'); }));
+['dragleave','drop'].forEach(e => zona.addEventListener(e, ev => {
+  ev.preventDefault(); zona.classList.remove('is-over'); }));
+zona.addEventListener('drop', ev => {
+  if($('#elegir').disabled) return;              // sin moneda elegida no se carga
+  procesar(ev.dataTransfer.files[0]);
+});
+
+// Elegir moneda habilita la carga; cambiarla afecta la vista mientras no haya comprobante.
+$('#moneda').addEventListener('change', () => { gateCarga(); if(datos) pintar(); });
+gateCarga();
+
+async function procesar(file){
+  if(!file || !file.name.toLowerCase().endsWith('.pdf')) return;
+  $('#zona_txt').textContent = 'Leyendo el resumen…';
+  try {
+    datos = await parseResumen(file);
+  } catch(err){
+    // Formato no reconocido: volvemos al estado expandido para mostrar el error y la ayuda.
+    document.querySelector('main').classList.remove('tx-loaded');
+    $('#zona').classList.remove('is-done');
+    $('#moneda').disabled = false;               // se libera para reintentar
+    $('#zona_txt').textContent = 'Arrastrá el PDF del resumen acá';
+    $('#elegir_txt').textContent = 'Elegir resumen';
+    $('#aviso_otro').hidden = false;
+    $('#resultado').hidden = true;
+    return;
+  }
+  // Leído: se congela la moneda (no se puede cambiar sin resetear) y se compacta el encabezado.
+  $('#moneda').disabled = true;
+  $('#resetear').hidden = false;
+  $('#aviso_otro').hidden = true;
+  document.querySelector('main').classList.add('tx-loaded');
+  $('#zona').classList.add('is-done');
+  $('#elegir_txt').textContent = 'Cambiar archivo';
+  const et = [datos.bancoEmisor, datos.red].filter(Boolean).join(' · ');
+  $('#zona_txt').textContent = et ? `Resumen leído — ${et}` : 'Resumen leído.';
+  pintar();
+}
+
+function pintar(){
+  $('#resultado').hidden = false;
+
+  // Cabecera: banco emisor, red y tarjeta(s) detectados
+  const cab = $('#tx-cabecera');
+  vaciar(cab);
+  const campos = [];
+  if(datos.bancoEmisor) campos.push(['Banco:', datos.bancoEmisor]);
+  if(datos.red) campos.push(['Red:', datos.red]);
+  if(datos.tarjetas && datos.tarjetas.length)
+    campos.push([`Tarjeta${datos.tarjetas.length>1?'s':''}:`, datos.tarjetas.map(t => '····'+t).join(', ')]);
+  campos.forEach(([k, v], i) => {
+    if(i) cab.append('  ·  ');
+    cab.append(mkEl('strong', null, k), ' ' + v);
+  });
+  cab.hidden = !campos.length;
+
+  // Moneda congelada al subir: toda la vista se arma sobre esa moneda.
+  // Las líneas de la otra moneda quedan afuera (no se muestran, no se tildan, no se exportan).
+  const campo = campoSel();
+  const lbl   = campo === 'usd' ? 'USD' : 'ARS';
+  $('#th_imp_c').textContent = `Importe (${lbl})`;
+  $('#th_imp_g').textContent = `Importe (${lbl})`;
+
+  // Análisis liviano: los consumos más grandes de la moneda elegida
+  const top = datos.consumos.filter(c => c[campo] > 0)
+    .sort((a,b) => b[campo] - a[campo]).slice(0, 6);
+  const panel = $('#tx-analisis');
+  if(top.length >= 2){
+    const max = top[0][campo];
+    const limpia = d => d.replace(/^[A-Z*]\s+/,'').replace(/\s+\d[\d.\/]*\s*$/,'').replace(/\s+/g,' ').trim() || d;
+    const bars = $('#tx_bars'); vaciar(bars);
+    top.forEach(c => {
+      const row = mkEl('div','tx-bar-row');
+      const head = mkEl('div','tx-bar-top');
+      head.append(mkEl('span','tx-bar-desc', limpia(c.desc)), mkEl('span','tx-bar-amt', pesos(c[campo])));
+      const track = mkEl('div','tx-bar-track');
+      const fill = mkEl('div','tx-bar-fill');
+      fill.style.width = (c[campo]/max*100).toFixed(1) + '%';
+      track.append(fill);
+      row.append(head, track);
+      bars.append(row);
+    });
+    panel.hidden = false;
+  } else panel.hidden = true;
+
+  // Consumos: sólo las líneas de la moneda elegida
+  const tbC = $('#filas_c'); vaciar(tbC);
+  datos.consumos.forEach(c => {
+    if(c[campo] == null) return;
+    const tr = mkEl('tr');
+    const tdChk = mkEl('td','tx-chk');
+    const lab = mkEl('label','checkbox');
+    const inp = mkEl('input'); inp.type = 'checkbox'; inp.checked = !!c.ok;
+    inp.onchange = () => { c.ok = inp.checked; totales(); };
+    lab.append(inp, mkEl('span'));
+    tdChk.append(lab);
+    tr.append(tdChk, mkEl('td', null, c.fecha), mkEl('td', null, c.desc), mkEl('td','num', pesos(c[campo])));
+    tbC.append(tr);
+  });
+
+  const tbG = $('#filas_g'); vaciar(tbG);
+  datos.cargos.forEach(c => {
+    if(c[campo] == null) return;
+    const tr = mkEl('tr');
+    tr.append(mkEl('td', null, c.fecha), mkEl('td', null, c.desc), mkEl('td','num', pesos(c[campo])));
+    tbG.append(tr);
+  });
+
+  pintarAlertas(revisar(datos));
+  totales();
+}
+
+function totales(){
+  const campo = campoSel();
+  const excl = datos.consumos.filter(c => c.ok && c[campo]);
+  const sin  = datos.consumos.filter(c => !c.ok && c[campo]);
+  const cg   = datos.cargos.filter(c => c[campo]);
+
+  $('#kpi_excl').textContent = pesos(suma(excl,campo));
+  $('#kpi_excl_n').textContent = `${excl.length} línea${excl.length===1?'':'s'} excluida${excl.length===1?'':'s'}`;
+  $('#kpi_sin').textContent = pesos(suma(sin,campo));
+  $('#kpi_sin_n').textContent = `${sin.length} línea${sin.length===1?'':'s'} con asiento`;
+  $('#kpi_cargos').textContent = pesos(suma(cg,campo));
+  $('#kpi_cargos_n').textContent = `${cg.length} línea${cg.length===1?'':'s'}`;
+}
+
+$('#todos').onclick   = () => { datos.consumos.forEach(c => c.ok = true);  pintar(); };
+$('#ninguno').onclick = () => { datos.consumos.forEach(c => c.ok = false); pintar(); };
+
+function pintarAlertas(alertas){
+  const c = $('#alertas');
+  c.hidden = !alertas.length;
+  vaciar(c);
+  if(!alertas.length) return;
+  const ul = mkEl('ul','signal-list');
+  alertas.forEach(a => {
+    const t = a.nivel === 'error' ? 'red' : 'amber';
+    const li = mkEl('li', `signal-summary tone-${t}`);
+    li.append(mkEl('span', `signal signal-${t}`));
+    const body = mkEl('div','signal-body');
+    body.append(mkEl('strong','signal-summary-state', a.nivel === 'error' ? 'Revisar' : 'Aviso'),
+                mkEl('p', null, a.texto));
+    li.append(body);
+    ul.append(li);
+  });
+  c.append(ul);
+}
+
+// Garantiza el formato PUNTOVENTA-NUMERO. Acepta "999-12345678", "999 12345678"
+// o "99912345678" (últimos 8 dígitos = número; el resto, punto de venta).
+function normalizarFactura(txt){
+  const t = (txt || '').trim();
+  if(!t) return '';
+  if(t.includes('-')) return t;                       // ya trae guión: se respeta
+  const d = t.replace(/\D/g, '');
+  if(d.length <= 8) return d;                          // no se puede inferir el PV
+  return `${d.slice(0, d.length - 8)}-${d.slice(-8)}`; // PV-NUMERO (8 dígitos)
+}
+
+// Habilita «Generar Excel» sólo cuando hay factura y moneda elegidas.
+function revisarExport(){
+  const ok = normalizarFactura($('#factura').value) && $('#moneda').value;
+  const b = $('#excel');
+  if(b) b.disabled = !ok;
+}
+$('#factura').addEventListener('input', revisarExport);
+$('#moneda').addEventListener('change', revisarExport);
+
+$('#excel').onclick = () => {
+  const factura = normalizarFactura($('#factura').value);
+  const moneda  = $('#moneda').value;              // 'ARS' | 'USD' | ''
+  const campo   = moneda === 'USD' ? 'usd' : 'pesos';
+  const al = revisar(datos);
+  if(!factura) al.push({nivel:'error', texto:'Falta el número completo de la factura RESUMEN.'});
+  if(!moneda)  al.push({nivel:'error', texto:'Elegí la moneda de la factura (Pesos o Dólares) antes de exportar.'});
+  // No tiene sentido exportar una moneda sin movimientos en ella.
+  const lineas = moneda
+    ? datos.consumos.filter(c => c[campo]).length + datos.cargos.filter(c => c[campo]).length
+    : 0;
+  if(moneda && !lineas)
+    al.push({nivel:'error', texto:`El resumen no tiene consumos ni cargos en ${moneda === 'USD' ? 'dólares' : 'pesos'}. Elegí la otra moneda.`});
+  pintarAlertas(al);
+  if(al.some(a => a.nivel === 'error')){
+    $('#leyenda').textContent = 'Hay problemas sin resolver. No se genera el Excel.';
+    return;
+  }
+  const salida = XLSX.write(construirExcel(datos, factura, campo), {bookType:'xlsx', type:'array'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([salida], {type:'application/octet-stream'}));
+  a.download = `detalle_resumen_${moneda}_${factura.replace(/[^\w-]/g,'_')}.xlsx`;
+  a.click(); URL.revokeObjectURL(a.href);
+  $('#leyenda').textContent = `Excel en ${moneda === 'USD' ? 'dólares' : 'pesos'} generado. Importalo en el detalle de la factura RESUMEN de esa moneda y verificá que el total cierre contra el resumen.`;
+};
+revisarExport();
+</script>
+</body>
+</html>
